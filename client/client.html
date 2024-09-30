@@ -2,23 +2,130 @@
 <html lang="en">
 <head>
   <title>Our simple HTTP server</title>
+  <meta charset="utf-8">
   <link rel="stylesheet" type="text/css" href="/style.css">
   
   <script>
+    let nameField;
+    let ageField;
+    let addUserButton;
+    let urlField;
+    let methodField;
+    let getUsersButton;
+    let contentRegion;
 
+    //Parses and displays the json -SJH
+    const parseJson = async (response) => {
+
+      if (response.status === 200) {
+        //Check that this is a GET or HEAD request response -SJH
+        if (response.body) {
+          const jsonObj = await response.json();
+          contentRegion.innerHTML = "<h2>Success</h2><br><p>" + JSON.stringify(jsonObj) + "</p>"
+        }
+        else{
+          contentRegion.innerHTML = "<h2>Success</h2><br>"
+        } 
+      } 
+      else if (response.status === 201) {
+        const jsonObj = await response.json();
+        contentRegion.innerHTML = "<h2>Created</h2><br><p>" + jsonObj.message + "</p>"
+      }
+      else if (response.status === 204) {
+        contentRegion.innerHTML = "<h2>Updated (No content)</h2>"
+      }
+      else {
+        if (response.body) {
+          const jsonObj = await response.json();
+          contentRegion.innerHTML = "<h2>" + jsonObj.id + "</h2><br><p>" + jsonObj.message + "</p>"
+        }
+        else {
+          contentRegion.innerHTML = "<h2>notFound</h2>"
+        }
+      }
+    }
+
+    //Handles the response that comes back from the server after a request is sent. -SJH
+    const handleResponse = (response) => {
+      acceptType = response.headers.get("Content-Type");
+      //JSON responses -SJH
+      if (acceptType === "application/json"){
+        parseJson(response);
+      }
+    }
+
+    //Called when the Get Users button is clicked. Sends a fetch request to the server 
+    //to get JSON back. -SJH
+    const sendGetOrHeadRequest = async () => {
+      const url = urlField.value;
+      const type = "application/json";
+      const method = methodField.value;
+      const headerObject = {
+        method,
+        headers: { "Accept": type}
+      }
+
+      const response = await fetch(url, headerObject)
+      handleResponse(response);
+    }
+
+    //Called when the Add User button is clicked. Sends a fetch request to the server 
+    //to get JSON back. -SJH
+    const sendPostRequest = async () =>{
+      const url = "/addUser";
+      const type = "application/json";
+      const method = "POST";
+      const nameToSend = nameField.value;
+      const ageToSend = ageField.value;
+      //Header object has the method (post), the type of data it is sending, 
+      //the type of data it wants back, and a body containing the data sent -SJH
+      const request = {
+        method,
+        headers: { 
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": type
+        },
+        //Note: This is the same format as with parameters in search queries -SJH
+        body: `name=${nameToSend}&age=${ageToSend}`
+      }
+
+      const response = await fetch(url, request)
+      handleResponse(response);
+    }
+
+    //Initialization method. Sets up event listeners for the menu system, which then send 
+    //requests to the server -SJH
+    const init = () => {
+      nameField = document.querySelector('#nameField');
+      ageField = document.querySelector('#ageField');
+      addUserButton = document.querySelector("#addUserButton");
+      urlField = document.querySelector("#urlField");
+      methodField = document.querySelector("#methodSelect");
+      getUsersButton = document.querySelector("#getUsersButton"); 
+
+      contentRegion = document.querySelector("#content");
+
+      addUserButton.onclick = sendPostRequest;
+      getUsersButton.onclick = sendGetOrHeadRequest;
+    };
+
+    //Waiting until the window loads to grab references to html elements -SJH
+    window.onload = () =>{
+      init();
+    }
   </script>
 </head>
 <body>
   <section id="top">
     <h3>POST Status Code Tests</h3>
-    <form id="nameForm" action="/addUser" method="post">
+    <div id="nameForm">
       <label for="name">Name: </label>
       <input id="nameField" type="text" name="name" />
       <label for="age">Age: </label>
       <input id="ageField" type="number" name="age" min="0" max="100" step="1"/>
-      <input type="submit" value="Add User" />
-    </form>
-    <form id="userForm" action="/getUsers" method="get">
+      <button id="addUserButton">Add User</button>
+    </div>
+    <div id="userForm">
       <select id='urlField'>
         <option value='/getUsers'>/getUsers</option>
         <option value='/notReal'>/notReal</option>
@@ -27,8 +134,8 @@
         <option value="get">GET</option>
         <option value="head">HEAD</option>
       </select>
-      <input type="submit" value="Get User" />
-    </form>
+      <button id="getUsersButton">Get Users</button>
+    </div>
   </section>
   <section id="content">
   </section>
