@@ -42,7 +42,7 @@ const addUserPt2 = (request, response) => {
     response.writeHead(204, { 'Content-Type': 'application/json' });
     response.end();
   } else {
-    // Create new user and send success json back -SJH
+    // Create new user and send success code/json back -SJH
     const newUser = { name: newName, age: newAge };
     usersObj[newName] = newUser;
 
